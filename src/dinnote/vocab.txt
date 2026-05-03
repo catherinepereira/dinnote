@@ -1,0 +1,16 @@
+# You can add words or phrases here that will be included in Whisper's initial prompt,
+# increasing the likelihood those words will be predicted during transcription.
+# Add one word or phrase per line and note that lines starting with # are ignored.
+#
+# Examples of what to add:
+#   - Technical jargon specific to your subject matter
+#   - Proper nouns (names of people, places, organizations, products)
+#   - Acronyms and their expansions
+#   - Any word Whisper is consistently getting wrong
+#
+# Example entries:
+# box box
+# VSC
+# DRS
+# understeer
+# oversteer

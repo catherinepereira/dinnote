@@ -1,0 +1,81 @@
+denoise:
+  # Demucs model used for vocal isolation.
+  # Options: htdemucs, htdemucs_ft, mdx, mdx_extra, htdemucs_6s
+  # See: https://github.com/facebookresearch/demucs
+  model: htdemucs
+
+vad:
+  # Detection sensitivity (0.0–1.0). Higher values require clearer speech to trigger.
+  # See: https://github.com/snakers4/silero-vad
+  threshold: 0.5
+
+  # Minimum duration of a detected speech region to keep (milliseconds).
+  # Set to null to use Silero's default (250ms).
+  min_speech_duration_ms: 250
+
+  # Minimum silence gap required before a new segment begins (milliseconds).
+  # Set to null to use Silero's default (100ms).
+  min_silence_duration_ms: 100
+
+  # Padding added before and after each detected segment (milliseconds).
+  # Set to null to disable padding.
+  padding_ms: 500
+
+  # Segments longer than this are discarded as likely noise or music (seconds).
+  # Set to null to keep all segments regardless of length.
+  max_segment_length_sec: 30
+
+  # Segments with less than this gap between them are merged into one (seconds).
+  # Set to null to disable merging of neighboring segments.
+  merge_within_sec: 1.0
+
+diarize:
+  # HuggingFace token with access to pyannote/speaker-diarization-3.1.
+  # hf_token: hf_...
+
+  # Fix the number of speakers if known. Set to null to let pyannote estimate.
+  num_speakers: null
+
+  # Alternatively constrain the range and let pyannote pick within it.
+  min_speakers: null
+  max_speakers: null
+
+  # Turns shorter than this are discarded (milliseconds).
+  min_turn_ms: 200
+
+transcribe:
+  # Whisper model size. Larger models are slower but more accurate.
+  # Options: tiny, base, small, medium, large
+  # See: https://github.com/openai/whisper
+  model: base
+
+  # Language code for transcription.
+  # Examples: en, fr, de, es, ja. Set to null to auto-detect.
+  language: en
+
+  # Decoding temperature.
+  # Set to 0 for single-pass greedy decoding with no fallback.
+  # Set to null to use Whisper's default fallback sequence (0.0, 0.2, …, 1.0),
+  # retrying at higher temperatures when output quality metrics look poor.
+  temperature: null
+
+  # Segments where Whisper's no-speech probability exceeds this are discarded.
+  # Set to null to use Whisper's default (0.6).
+  no_speech_threshold: 0.6
+
+  # Segments with average log-probability below this are discarded as likely low-quality audio.
+  # Set to null to use Whisper's default (-1.0).
+  logprob_threshold: -1.0
+
+  # Segments with compression ratio above this are discarded as likely hallucinations.
+  # Set to null to use Whisper's default (2.4).
+  compression_ratio_threshold: 2.4
+
+  # Whether Whisper should use the previous segment's output as context for the next.
+  # Improves coherence across segments but can propagate errors.
+  # Default: false.
+  condition_on_previous_text: false
+
+  # Path to a file containing domain-specific vocabulary to guide transcription.
+  # Set to null to disable.
+  vocab_file: vocab.txt
