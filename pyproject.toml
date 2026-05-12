@@ -7,7 +7,28 @@ name = "dinnote"
 version = "0.1.0"
 description = "Audio denoising, VAD, speaker diarization, and transcription pipeline using Demucs, Silero VAD, pyannote, and Whisper"
 readme = "README.md"
+license = { text = "MIT" }
 requires-python = ">=3.10"
+authors = [
+    { name = "Cat Pereira", email = "catpereiradev@gmail.com" },
+]
+keywords = ["audio", "transcription", "diarization", "speech", "whisper"]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Environment :: Console",
+    "Intended Audience :: Developers",
+    "Intended Audience :: Science/Research",
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Topic :: Multimedia :: Sound/Audio :: Speech",
+    "Topic :: Scientific/Engineering :: Artificial Intelligence",
+]
+
+[project.urls]
+Homepage = "https://github.com/catherinepereira/dinnote"
+"Bug Tracker" = "https://github.com/catherinepereira/dinnote/issues"
 dependencies = [
     "demucs>=4.0.0",
     "torchcodec",
