@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "dinnote"
-version = "0.1.1"
+version = "0.2.0"
 description = "Audio denoising, VAD, speaker diarization, and transcription pipeline using Demucs, Silero VAD, pyannote, and Whisper"
 readme = "README.md"
 license = { text = "MIT" }

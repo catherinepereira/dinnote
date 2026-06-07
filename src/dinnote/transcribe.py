@@ -2,8 +2,8 @@
 Transcribes speech segments from denoised audio using Whisper.
 
 Accepts either:
-  - a diarization JSON (preferred) — per-speaker turns from pyannote
-  - a VAD JSON (fallback) — speaker-agnostic segments from Silero
+  - a diarization JSON (preferred): per-speaker turns from pyannote
+  - a VAD JSON (fallback): speaker-agnostic segments from Silero
 
 When using diarization, each transcription entry includes the speaker label.
 """
@@ -91,9 +91,29 @@ def run(
     condition_on_previous_text = config.get("condition_on_previous_text", False)
     vocab_file = config.get("vocab_file", "vocab.txt")
 
+    whole_file = config.get("whole_file", False)
+    word_timestamps = config.get("word_timestamps", False)
+
     device = "cuda" if cuda_available() else "cpu"
     model = _load_model(model_name, device)
     initial_prompt = _load_vocabulary(vocab_file) or None
+
+    if whole_file:
+        return _transcribe_whole_file(
+            audio_path, output_file, output_dir, model,
+            language=language,
+            device=device,
+            temperature=temperature,
+            no_speech_threshold=no_speech_threshold,
+            logprob_threshold=logprob_threshold,
+            compression_ratio_threshold=compression_ratio_threshold,
+            condition_on_previous_text=condition_on_previous_text,
+            initial_prompt=initial_prompt,
+            word_timestamps=word_timestamps,
+            model_name=model_name,
+            diarization_path=diarization_path,
+            on_segment=on_segment,
+        )
 
     segments, source = _load_segments(diarization_path, vad_path)
     if not segments:
@@ -193,6 +213,120 @@ def run(
         if temp_dir.exists():
             shutil.rmtree(temp_dir)
 
+    return output_file
+
+
+def _segment_bounds(seg: dict, word_timestamps: bool) -> tuple[float, float]:
+    """Return (start_s, end_s), tightened to the first/last word when available."""
+    words = seg.get("words") or []
+    if word_timestamps and words:
+        return words[0].get("start", seg["start"]), words[-1].get("end", seg["end"])
+    return seg["start"], seg["end"]
+
+
+def _load_turns(diarization_path: Optional[Path]) -> list[tuple[float, float, str]]:
+    """Load diarization turns as (start_s, end_s, speaker) for overlap labeling."""
+    if not diarization_path or not diarization_path.exists():
+        return []
+    data = json.loads(diarization_path.read_text(encoding="utf-8"))
+    return [
+        (t["start_ms"] / 1000, t["end_ms"] / 1000, t["speaker"])
+        for t in data.get("turns", [])
+    ]
+
+
+def _speaker_for(start: float, end: float, turns: list[tuple[float, float, str]]) -> Optional[str]:
+    """Return the speaker whose turn overlaps [start, end] most, or None."""
+    best_label = None
+    best_overlap = 0.0
+    for ts, te, label in turns:
+        overlap = min(end, te) - max(start, ts)
+        if overlap > best_overlap:
+            best_overlap = overlap
+            best_label = label
+    return best_label
+
+
+def _transcribe_whole_file(
+    audio_path: Path,
+    output_file: Path,
+    output_dir: Path,
+    model,
+    *,
+    language: str,
+    device: str,
+    temperature,
+    no_speech_threshold,
+    logprob_threshold,
+    compression_ratio_threshold,
+    condition_on_previous_text: bool,
+    initial_prompt: Optional[str],
+    word_timestamps: bool,
+    model_name: str,
+    diarization_path: Optional[Path],
+    on_segment: Optional[Callable],
+) -> Path:
+    """Transcribe the whole file in one Whisper pass, one entry per Whisper segment.
+
+    With word_timestamps, each entry is tightened to its first and last word.
+    Each entry is labeled with the speaker whose diarization turn overlaps it most.
+    """
+    output_dir.mkdir(parents=True, exist_ok=True)
+
+    transcribe_kwargs = dict(
+        language=language,
+        fp16=(device == "cuda"),
+        condition_on_previous_text=condition_on_previous_text,
+        initial_prompt=initial_prompt,
+        word_timestamps=word_timestamps,
+    )
+    if temperature is not None:
+        transcribe_kwargs["temperature"] = temperature
+    if no_speech_threshold is not None:
+        transcribe_kwargs["no_speech_threshold"] = no_speech_threshold
+    if logprob_threshold is not None:
+        transcribe_kwargs["logprob_threshold"] = logprob_threshold
+    if compression_ratio_threshold is not None:
+        transcribe_kwargs["compression_ratio_threshold"] = compression_ratio_threshold
+
+    result = model.transcribe(str(audio_path), **transcribe_kwargs)
+
+    turns = _load_turns(diarization_path)
+    segments = result.get("segments", [])
+    transcription = []
+    for i, seg in enumerate(segments, 1):
+        text = (seg.get("text") or "").strip()
+        if text and not (
+            no_speech_threshold is not None
+            and seg.get("no_speech_prob", 0) > no_speech_threshold
+        ):
+            start, end = _segment_bounds(seg, word_timestamps)
+            entry = {"timestamp": {"start": start, "end": end}, "text": text}
+            speaker = _speaker_for(start, end, turns)
+            if speaker is not None:
+                entry["speaker"] = speaker
+            transcription.append(entry)
+        if on_segment:
+            on_segment(i, len(segments))
+
+    output = {
+        "metadata": {
+            "source_audio": audio_path.name,
+            "model": model_name,
+            "language": language,
+            "segment_source": "diarization" if turns else "whole_file",
+            "temperature": temperature,
+            "no_speech_threshold": no_speech_threshold,
+            "logprob_threshold": logprob_threshold,
+            "compression_ratio_threshold": compression_ratio_threshold,
+            "total_segments": len(segments),
+            "processed_segments": len(segments),
+            "whole_file": True,
+            "word_timestamps": word_timestamps,
+        },
+        "transcription": transcription,
+    }
+    _write_json(output_file, output)
     return output_file
 
 
