@@ -39,7 +39,7 @@ dependencies = [
 ]
 
 [project.urls]
-Homepage = "https://github.com/catherinepereira/dinnote"
+Repository = "https://github.com/catherinepereira/dinnote"
 "Bug Tracker" = "https://github.com/catherinepereira/dinnote/issues"
 
 [project.scripts]
