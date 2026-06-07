@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "dinnote"
-version = "0.1.0"
+version = "0.1.1"
 description = "Audio denoising, VAD, speaker diarization, and transcription pipeline using Demucs, Silero VAD, pyannote, and Whisper"
 readme = "README.md"
 license = { text = "MIT" }
@@ -26,20 +26,21 @@ classifiers = [
     "Topic :: Scientific/Engineering :: Artificial Intelligence",
 ]
 
-[project.urls]
-Homepage = "https://github.com/catherinepereira/dinnote"
-"Bug Tracker" = "https://github.com/catherinepereira/dinnote/issues"
 dependencies = [
     "demucs>=4.0.0",
     "torchcodec",
-    "torch",
-    "torchaudio",
+    "torch>=2.4",
+    "torchaudio>=2.4",
     "pydub",
     "packaging",
     "pyannote.audio>=3.1.0",
     "openai-whisper",
     "pyyaml",
 ]
+
+[project.urls]
+Homepage = "https://github.com/catherinepereira/dinnote"
+"Bug Tracker" = "https://github.com/catherinepereira/dinnote/issues"
 
 [project.scripts]
 dinnote = "dinnote.cli:main"
