@@ -1,4 +1,8 @@
 ## dinnote audio transcription
+
+<img width="600" alt="dinnote-cli" src="https://github.com/user-attachments/assets/685dabe3-c19c-457e-be3f-43aeb7f60bb8" />
+
+
 Processes audio through a four-step pipeline to produce a transcription JSON with per-speaker diarization: denoising (Demucs), voice activity detection (Silero VAD), speaker diarization (pyannote), and transcription (Whisper).
 
 ### Installation
